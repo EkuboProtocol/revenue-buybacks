@@ -1,0 +1,11 @@
+#######
+Scarb
+#######
+
+target
+
+node_modules/
+
+out/
+
+.snfoundry_cache

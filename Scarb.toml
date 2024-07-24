@@ -1,0 +1,24 @@
+[package]
+name = "ekubo_rb"
+version = "0.1.0"
+description = "Owner for the Ekubo core contract that allows anyone to trigger buybacks via TWAMM"
+homepage = "https://ekubo.org"
+cairo-version = "2.6.3"
+edition = '2023_11'
+
+[dependencies]
+ekubo = { git = "https://github.com/ekuboprotocol/abis" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry" }
+starknet = "=2.6.3"
+
+[tool.fmt]
+sort-module-level-items = true
+
+[[target.starknet-contract]]
+allowed-libfuncs-list.name = "audited"
+casm = true
+
+[[tool.snforge.fork]]
+name = "mainnet"
+url = "https://free-rpc.nethermind.io/mainnet-juno"
+block_id.tag = "Latest"
