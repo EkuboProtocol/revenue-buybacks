@@ -2,6 +2,7 @@ use core::num::traits::{Zero};
 use core::option::{OptionTrait};
 use core::serde::{Serde};
 use core::traits::{TryInto};
+use ekubo::components::owned::{IOwnedDispatcher, IOwnedDispatcherTrait};
 use ekubo::interfaces::core::{
     ICoreDispatcherTrait, ICoreDispatcher, IExtensionDispatcher, IExtensionDispatcherTrait
 };
@@ -15,8 +16,8 @@ use ekubo_rb::revenue_buybacks::{
     IRevenueBuybacksDispatcher, IRevenueBuybacksDispatcherTrait, Config
 };
 use snforge_std::{
-    declare, ContractClassTrait, cheat_caller_address, cheat_block_timestamp, CheatSpan,
-    ContractClass
+    declare, ContractClassTrait, cheat_caller_address, stop_cheat_caller_address,
+    cheat_block_timestamp, CheatSpan, ContractClass
 };
 use starknet::{
     get_contract_address, get_block_timestamp, contract_address_const,
@@ -43,8 +44,8 @@ fn deploy_revenue_buybacks() -> IRevenueBuybacksDispatcher {
             positions(),
             Config {
                 buy_token: ekubo_token().contract_address,
-                // 12 hours
-                min_duration: 43200,
+                // 30 seconds
+                min_duration: 30,
                 // 7 days
                 max_duration: 604800,
                 // 30 bips
@@ -98,7 +99,19 @@ fn governor_address() -> ContractAddress {
 #[fork("mainnet")]
 fn test_eth_buybacks() {
     let rb = deploy_revenue_buybacks();
-// todo: transfer ownership of core to rb by cheating the governor address
-// todo: trigger a buyback of eth
+    let core = ekubo_core();
+    cheat_caller_address(core.contract_address, governor_address(), CheatSpan::Indefinite);
+    IOwnedDispatcher { contract_address: core.contract_address }
+        .transfer_ownership(rb.contract_address);
+    stop_cheat_caller_address(core.contract_address);
+
+    rb
+        .start_buybacks_all(
+            contract_address_const::<
+                0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
+            >(),
+            (get_block_timestamp() / 16) * 16,
+            ((get_block_timestamp() / 16) + 8) * 16
+        );
 }
 

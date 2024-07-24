@@ -43,6 +43,9 @@ pub trait IRevenueBuybacks<TContractState> {
     // Collects the proceeds for a particular order
     fn collect_proceeds_to_owner(ref self: TContractState, order_key: OrderKey);
 
+    // Sets the default config
+    fn set_default_config(ref self: TContractState, config: Config);
+
     // Overrides the config for the given token. Only callable by the owner.
     fn set_config_for_token(ref self: TContractState, sell_token: ContractAddress, config: Config);
 
@@ -181,6 +184,11 @@ pub mod RevenueBuybacks {
                     minimum: 0,
                     recipient: self.get_owner()
                 );
+        }
+
+        fn set_default_config(ref self: ContractState, config: Config) {
+            self.require_owner();
+            self.config.write(config);
         }
 
         fn set_config_for_token(
