@@ -2,6 +2,7 @@ use core::num::traits::{Zero};
 use core::option::{OptionTrait};
 use core::serde::{Serde};
 use core::traits::{TryInto};
+use ekubo::extensions::interfaces::twamm::{OrderKey};
 use ekubo::components::owned::{IOwnedDispatcher, IOwnedDispatcherTrait};
 use ekubo::interfaces::core::{
     ICoreDispatcherTrait, ICoreDispatcher, IExtensionDispatcher, IExtensionDispatcherTrait
@@ -24,36 +25,10 @@ use starknet::{
     storage_access::{StorePacking}, syscalls::{deploy_syscall}, ContractAddress
 };
 
-fn deploy_token(
-    class: ContractClass, recipient: ContractAddress, amount: u256
-) -> IERC20Dispatcher {
-    let (contract_address, _) = class
-        .deploy(@array![recipient.into(), amount.low.into(), amount.high.into()])
-        .expect('Deploy token failed');
-
-    IERC20Dispatcher { contract_address }
-}
-
-fn deploy_revenue_buybacks() -> IRevenueBuybacksDispatcher {
+fn deploy_revenue_buybacks(config: Config) -> IRevenueBuybacksDispatcher {
     let contract = declare("RevenueBuybacks").unwrap();
     let mut args: Array<felt252> = array![];
-    Serde::serialize(
-        @(
-            get_contract_address(),
-            ekubo_core(),
-            positions(),
-            Config {
-                buy_token: ekubo_token().contract_address,
-                // 30 seconds
-                min_duration: 30,
-                // 7 days
-                max_duration: 604800,
-                // 30 bips
-                fee: 1020847100762815411640772995208708096
-            }
-        ),
-        ref args,
-    );
+    Serde::serialize(@(get_contract_address(), ekubo_core(), positions(), config), ref args,);
     let (contract_address, _) = contract.deploy(@args).expect('Deploy failed');
 
     IRevenueBuybacksDispatcher { contract_address }
@@ -95,23 +70,61 @@ fn governor_address() -> ContractAddress {
     contract_address_const::<0x053499f7aa2706395060fe72d00388803fb2dcc111429891ad7b2d9dcea29acd>()
 }
 
-#[test]
-#[fork("mainnet")]
-fn test_eth_buybacks() {
-    let rb = deploy_revenue_buybacks();
+fn eth_token() -> ContractAddress {
+    contract_address_const::<0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7>()
+}
+
+
+// Deploys the revenue buybacks with the specified config or a default config and makes it the owner of ekubo core
+fn setup(config: Option<Config>) -> IRevenueBuybacksDispatcher {
+    let rb = deploy_revenue_buybacks(
+        config
+            .unwrap_or(
+                Config {
+                    buy_token: ekubo_token().contract_address,
+                    // 30 seconds
+                    min_duration: 30,
+                    // 7 days
+                    max_duration: 604800,
+                    // 30 bips
+                    fee: 1020847100762815411640772995208708096
+                }
+            )
+    );
     let core = ekubo_core();
     cheat_caller_address(core.contract_address, governor_address(), CheatSpan::Indefinite);
     IOwnedDispatcher { contract_address: core.contract_address }
         .transfer_ownership(rb.contract_address);
     stop_cheat_caller_address(core.contract_address);
-
     rb
-        .start_buybacks_all(
-            contract_address_const::<
-                0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
-            >(),
-            (get_block_timestamp() / 16) * 16,
-            ((get_block_timestamp() / 16) + 8) * 16
+}
+
+#[test]
+#[fork("mainnet")]
+fn test_eth_buybacks() {
+    let rb = setup(config: Option::None);
+    let start_time = (get_block_timestamp() / 16) * 16;
+    let end_time = start_time + (16 * 8);
+
+    let protocol_revenue_eth = ekubo_core().get_protocol_fees_collected(eth_token());
+    rb.start_buybacks_all(sell_token: eth_token(), start_time: start_time, end_time: end_time);
+
+    let config = rb.get_config(eth_token());
+
+    let order_info = positions()
+        .get_order_info(
+            id: rb.get_token_id(),
+            order_key: OrderKey {
+                sell_token: eth_token(),
+                buy_token: ekubo_token().contract_address,
+                fee: config.fee,
+                start_time,
+                end_time
+            }
         );
+
+    // rounding error may not be sold
+    assert_lt!(protocol_revenue_eth - order_info.remaining_sell_amount, 2);
+    assert_eq!(order_info.purchased_amount, 0);
 }
 

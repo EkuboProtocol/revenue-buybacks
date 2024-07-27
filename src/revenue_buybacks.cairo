@@ -23,6 +23,9 @@ pub trait IRevenueBuybacks<TContractState> {
     // Returns the positions contract that is used by this contract to implement the buybacks
     fn get_positions(self: @TContractState) -> ContractAddress;
 
+    // Returns the NFT token ID for the positions contract with which all the sell orders are associated
+    fn get_token_id(self: @TContractState) -> u64;
+
     // Returns the configuration of this contract
     fn get_config(self: @TContractState, sell_token: ContractAddress) -> Config;
 
@@ -123,6 +126,10 @@ pub mod RevenueBuybacks {
         fn get_positions(self: @ContractState) -> ContractAddress {
             self.positions.read().contract_address
         }
+        
+        fn get_token_id(self: @ContractState) -> u64 {
+            self.token_id.read()
+        }
 
         fn get_config(self: @ContractState, sell_token: ContractAddress) -> Config {
             self.config_overrides.read(sell_token).unwrap_or(self.config.read())
@@ -203,5 +210,7 @@ pub mod RevenueBuybacks {
             IOwnedDispatcher { contract_address: self.core.read().contract_address }
                 .transfer_ownership(self.get_owner());
         }
+
+
     }
 }
