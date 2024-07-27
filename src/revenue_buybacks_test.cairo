@@ -159,7 +159,7 @@ fn test_reclaim_core() {
     assert_eq!(
         IERC721Dispatcher { contract_address: positions().get_nft_address() }
             .ownerOf(rb.get_token_id().into()),
-        governor_address()
+        rb.contract_address
     );
 }
 

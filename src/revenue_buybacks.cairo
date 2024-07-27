@@ -212,8 +212,6 @@ pub mod RevenueBuybacks {
             let owner = self.get_owner();
             IOwnedDispatcher { contract_address: self.core.read().contract_address }
                 .transfer_ownership(owner);
-            IERC721Dispatcher { contract_address: self.positions.read().get_nft_address() }
-                .transfer_from(get_contract_address(), owner, self.get_token_id().into())
         }
     }
 }
