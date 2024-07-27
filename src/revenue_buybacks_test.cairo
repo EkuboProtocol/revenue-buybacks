@@ -2,13 +2,13 @@ use core::num::traits::{Zero};
 use core::option::{OptionTrait};
 use core::serde::{Serde};
 use core::traits::{TryInto};
-use ekubo::extensions::interfaces::twamm::{OrderKey};
 use ekubo::components::owned::{IOwnedDispatcher, IOwnedDispatcherTrait};
+use ekubo::extensions::interfaces::twamm::{OrderKey};
 use ekubo::interfaces::core::{
     ICoreDispatcherTrait, ICoreDispatcher, IExtensionDispatcher, IExtensionDispatcherTrait
 };
-use ekubo::interfaces::erc721::{IERC721Dispatcher, IERC721DispatcherTrait};
 use ekubo::interfaces::erc20::{IERC20Dispatcher};
+use ekubo::interfaces::erc721::{IERC721Dispatcher, IERC721DispatcherTrait};
 use ekubo::interfaces::mathlib::{IMathLibDispatcher};
 use ekubo::interfaces::positions::{IPositionsDispatcher, IPositionsDispatcherTrait};
 use ekubo::interfaces::router::{IRouterDispatcher, IRouterDispatcherTrait, RouteNode, TokenAmount};
@@ -83,6 +83,8 @@ fn setup(config: Option<Config>) -> IRevenueBuybacksDispatcher {
             .unwrap_or(
                 Config {
                     buy_token: ekubo_token().contract_address,
+                    min_delay: 0,
+                    max_delay: 43200,
                     // 30 seconds
                     min_duration: 30,
                     // 7 days

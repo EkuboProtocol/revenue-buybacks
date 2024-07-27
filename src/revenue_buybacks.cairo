@@ -7,6 +7,10 @@ use starknet::{ContractAddress, ClassHash, storage_access::{StorePacking}};
 pub struct Config {
     // The token that will be purchased in the buybacks
     pub buy_token: ContractAddress,
+    // The minimum amount of time that can be between the start time and the current time. A value of 0 means the orders _can_ start immediately
+    pub min_delay: u64,
+    // The maximum amount of time that can be between the start time and the current time. A value of 0 means that the orders _must_ start immediately
+    pub max_delay: u64,
     // The minimum duration of the buyback
     pub min_duration: u64,
     // The maximum duration of the buyback
@@ -72,8 +76,8 @@ pub mod RevenueBuybacks {
         IExtension, SwapParameters, UpdatePositionParameters, ILocker, ICoreDispatcher,
         ICoreDispatcherTrait
     };
-    use ekubo::interfaces::erc721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use ekubo::interfaces::erc20::{IERC20Dispatcher};
+    use ekubo::interfaces::erc721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use ekubo::interfaces::positions::{IPositionsDispatcher, IPositionsDispatcherTrait};
 
     use ekubo::types::keys::{PoolKey, PositionKey};
@@ -146,13 +150,27 @@ pub mod RevenueBuybacks {
         ) {
             let config = self.get_config(sell_token);
 
+            let current_time = get_block_timestamp();
             assert(config.buy_token != sell_token, 'Invalid sell token');
             assert(end_time > start_time, 'Invalid start or end time');
-            let actual_start = max(get_block_timestamp(), start_time);
+            let actual_start = max(current_time, start_time);
             assert(end_time > actual_start, 'End time expired');
             let duration = end_time - actual_start;
             assert(duration >= config.min_duration, 'Duration too short');
             assert(duration <= config.max_duration, 'Duration too long');
+            // Enforce the order starts within the min/max delay
+            if (config.min_delay.is_non_zero()) {
+                assert(
+                    start_time > current_time && (start_time - current_time) >= config.min_delay,
+                    'Order must start > min delay'
+                );
+            }
+            // if it starts in the future, make sure it's not too far in the future
+            if (start_time > current_time) {
+                assert(
+                    (start_time - current_time) < config.max_delay, 'Order must start < max delay'
+                );
+            }
 
             let positions = self.positions.read();
             let token_id = self.token_id.read();
