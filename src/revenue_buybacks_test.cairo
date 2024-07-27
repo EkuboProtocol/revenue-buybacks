@@ -7,6 +7,7 @@ use ekubo::components::owned::{IOwnedDispatcher, IOwnedDispatcherTrait};
 use ekubo::interfaces::core::{
     ICoreDispatcherTrait, ICoreDispatcher, IExtensionDispatcher, IExtensionDispatcherTrait
 };
+use ekubo::interfaces::erc721::{IERC721Dispatcher, IERC721DispatcherTrait};
 use ekubo::interfaces::erc20::{IERC20Dispatcher};
 use ekubo::interfaces::mathlib::{IMathLibDispatcher};
 use ekubo::interfaces::positions::{IPositionsDispatcher, IPositionsDispatcherTrait};
@@ -28,7 +29,7 @@ use starknet::{
 fn deploy_revenue_buybacks(config: Config) -> IRevenueBuybacksDispatcher {
     let contract = declare("RevenueBuybacks").unwrap();
     let mut args: Array<felt252> = array![];
-    Serde::serialize(@(get_contract_address(), ekubo_core(), positions(), config), ref args,);
+    Serde::serialize(@(governor_address(), ekubo_core(), positions(), config), ref args,);
     let (contract_address, _) = contract.deploy(@args).expect('Deploy failed');
 
     IRevenueBuybacksDispatcher { contract_address }
@@ -99,6 +100,20 @@ fn setup(config: Option<Config>) -> IRevenueBuybacksDispatcher {
     rb
 }
 
+
+#[test]
+#[fork("mainnet")]
+fn test_setup_sets_owner() {
+    let rb = setup(config: Option::None);
+    assert_eq!(
+        IOwnedDispatcher { contract_address: rb.contract_address }.get_owner(), governor_address()
+    );
+    assert_eq!(
+        IOwnedDispatcher { contract_address: ekubo_core().contract_address }.get_owner(),
+        rb.contract_address
+    );
+}
+
 #[test]
 #[fork("mainnet")]
 fn test_eth_buybacks() {
@@ -126,5 +141,25 @@ fn test_eth_buybacks() {
     // rounding error may not be sold
     assert_lt!(protocol_revenue_eth - order_info.remaining_sell_amount, 2);
     assert_eq!(order_info.purchased_amount, 0);
+}
+
+
+#[test]
+#[fork("mainnet")]
+fn test_reclaim_core() {
+    let rb = setup(config: Option::None);
+
+    cheat_caller_address(rb.contract_address, governor_address(), CheatSpan::Indefinite);
+    rb.reclaim_core();
+    stop_cheat_caller_address(rb.contract_address);
+    assert_eq!(
+        IOwnedDispatcher { contract_address: ekubo_core().contract_address }.get_owner(),
+        governor_address()
+    );
+    assert_eq!(
+        IERC721Dispatcher { contract_address: positions().get_nft_address() }
+            .ownerOf(rb.get_token_id().into()),
+        governor_address()
+    );
 }
 

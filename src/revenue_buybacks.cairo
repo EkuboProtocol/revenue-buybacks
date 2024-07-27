@@ -64,13 +64,15 @@ pub mod RevenueBuybacks {
     use core::option::{OptionTrait};
     use core::traits::{TryInto, Into};
     use ekubo::components::clear::{IClearDispatcher, IClearDispatcherTrait};
-    use ekubo::components::owned::{IOwned, IOwnedDispatcher, IOwnedDispatcherTrait, Ownable};
-    use ekubo::components::owned::{Owned as owned_component};
+    use ekubo::components::owned::{
+        IOwned, IOwnedDispatcher, IOwnedDispatcherTrait, Ownable, Owned as owned_component
+    };
     use ekubo::components::shared_locker::{call_core_with_callback, consume_callback_data};
     use ekubo::interfaces::core::{
         IExtension, SwapParameters, UpdatePositionParameters, ILocker, ICoreDispatcher,
         ICoreDispatcherTrait
     };
+    use ekubo::interfaces::erc721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use ekubo::interfaces::erc20::{IERC20Dispatcher};
     use ekubo::interfaces::positions::{IPositionsDispatcher, IPositionsDispatcherTrait};
 
@@ -126,7 +128,7 @@ pub mod RevenueBuybacks {
         fn get_positions(self: @ContractState) -> ContractAddress {
             self.positions.read().contract_address
         }
-        
+
         fn get_token_id(self: @ContractState) -> u64 {
             self.token_id.read()
         }
@@ -207,10 +209,11 @@ pub mod RevenueBuybacks {
 
         fn reclaim_core(ref self: ContractState) {
             self.require_owner();
+            let owner = self.get_owner();
             IOwnedDispatcher { contract_address: self.core.read().contract_address }
-                .transfer_ownership(self.get_owner());
+                .transfer_ownership(owner);
+            IERC721Dispatcher { contract_address: self.positions.read().get_nft_address() }
+                .transfer_from(get_contract_address(), owner, self.get_token_id().into())
         }
-
-
     }
 }
