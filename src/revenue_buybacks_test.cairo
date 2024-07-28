@@ -19,7 +19,7 @@ use ekubo_rb::revenue_buybacks::{
 };
 use snforge_std::{
     declare, ContractClassTrait, cheat_caller_address, stop_cheat_caller_address,
-    cheat_block_timestamp, CheatSpan, ContractClass
+    start_cheat_block_timestamp_global, CheatSpan, ContractClass
 };
 use starknet::{
     get_contract_address, get_block_timestamp, contract_address_const,
@@ -102,6 +102,12 @@ fn setup(config: Option<Config>) -> IRevenueBuybacksDispatcher {
     rb
 }
 
+fn advance_time(by: u64) -> u64 {
+    let time = get_block_timestamp();
+    let next = time + by;
+    start_cheat_block_timestamp_global(next);
+    next
+}
 
 #[test]
 #[fork("mainnet")]
@@ -143,6 +149,23 @@ fn test_eth_buybacks() {
     // rounding error may not be sold
     assert_lt!(protocol_revenue_eth - order_info.remaining_sell_amount, 2);
     assert_eq!(order_info.purchased_amount, 0);
+
+    advance_time(end_time - get_block_timestamp());
+
+    let order_info_after = positions()
+        .get_order_info(
+            id: rb.get_token_id(),
+            order_key: OrderKey {
+                sell_token: eth_token(),
+                buy_token: ekubo_token().contract_address,
+                fee: config.fee,
+                start_time,
+                end_time
+            }
+        );
+
+    assert_eq!(order_info_after.remaining_sell_amount, 0);
+    assert_gt!(order_info_after.purchased_amount, 0);
 }
 
 
