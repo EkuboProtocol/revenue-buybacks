@@ -30,7 +30,7 @@ pub trait IRevenueBuybacks<TContractState> {
     // Returns the NFT token ID for the positions contract with which all the sell orders are associated
     fn get_token_id(self: @TContractState) -> u64;
 
-    // Returns the default configuration of this contract.
+    // Returns the configuration for the given sell token
     fn get_config(self: @TContractState, sell_token: ContractAddress) -> Config;
 
     // Withdraws the specified amount of revenue from the core contract and begins a sale of the token for the specified start and end time.
