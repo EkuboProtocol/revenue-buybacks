@@ -7,7 +7,7 @@ use ekubo::extensions::interfaces::twamm::{OrderKey};
 use ekubo::interfaces::core::{
     ICoreDispatcherTrait, ICoreDispatcher, IExtensionDispatcher, IExtensionDispatcherTrait
 };
-use ekubo::interfaces::erc20::{IERC20Dispatcher};
+use ekubo::interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
 use ekubo::interfaces::erc721::{IERC721Dispatcher, IERC721DispatcherTrait};
 use ekubo::interfaces::mathlib::{IMathLibDispatcher};
 use ekubo::interfaces::positions::{IPositionsDispatcher, IPositionsDispatcherTrait};
@@ -134,17 +134,15 @@ fn test_eth_buybacks() {
 
     let config = rb.get_config(eth_token());
 
-    let order_info = positions()
-        .get_order_info(
-            id: rb.get_token_id(),
-            order_key: OrderKey {
-                sell_token: eth_token(),
-                buy_token: ekubo_token().contract_address,
-                fee: config.fee,
-                start_time,
-                end_time
-            }
-        );
+    let order_key = OrderKey {
+        sell_token: eth_token(),
+        buy_token: ekubo_token().contract_address,
+        fee: config.fee,
+        start_time,
+        end_time
+    };
+
+    let order_info = positions().get_order_info(id: rb.get_token_id(), order_key: order_key);
 
     // rounding error may not be sold
     assert_lt!(protocol_revenue_eth - order_info.remaining_sell_amount, 2);
@@ -152,20 +150,15 @@ fn test_eth_buybacks() {
 
     advance_time(end_time - get_block_timestamp());
 
-    let order_info_after = positions()
-        .get_order_info(
-            id: rb.get_token_id(),
-            order_key: OrderKey {
-                sell_token: eth_token(),
-                buy_token: ekubo_token().contract_address,
-                fee: config.fee,
-                start_time,
-                end_time
-            }
-        );
+    let order_info_after = positions().get_order_info(id: rb.get_token_id(), order_key: order_key);
 
     assert_eq!(order_info_after.remaining_sell_amount, 0);
     assert_gt!(order_info_after.purchased_amount, 0);
+
+    let balance_before = ekubo_token().balanceOf(governor_address());
+    rb.collect_proceeds_to_owner(order_key);
+    let balance_after = ekubo_token().balanceOf(governor_address());
+    assert_gt!(balance_after - balance_before, 0);
 }
 
 
