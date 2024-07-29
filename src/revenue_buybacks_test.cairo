@@ -158,7 +158,7 @@ fn test_eth_buybacks() {
     let balance_before = ekubo_token().balanceOf(governor_address());
     rb.collect_proceeds_to_owner(order_key);
     let balance_after = ekubo_token().balanceOf(governor_address());
-    assert_gt!(balance_after - balance_before, 0);
+    assert_eq!(balance_after - balance_before, order_info_after.purchased_amount.into());
 }
 
 
