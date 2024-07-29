@@ -30,10 +30,10 @@ pub trait IRevenueBuybacks<TContractState> {
     // Returns the NFT token ID for the positions contract with which all the sell orders are associated
     fn get_token_id(self: @TContractState) -> u64;
 
-    // Returns the configuration of this contract
+    // Returns the default configuration of this contract.
     fn get_config(self: @TContractState, sell_token: ContractAddress) -> Config;
 
-    // Withdraws revenue from the core contract and begins a sale
+    // Withdraws the specified amount of revenue from the core contract and begins a sale of the token for the specified start and end time.
     fn start_buybacks(
         ref self: TContractState,
         sell_token: ContractAddress,
@@ -42,7 +42,7 @@ pub trait IRevenueBuybacks<TContractState> {
         end_time: u64
     );
 
-    // Withdraws _all_ revenue and starts buybacks
+    // Withdraws _all_ revenue for a token and starts buybacks.
     fn start_buybacks_all(
         ref self: TContractState, sell_token: ContractAddress, start_time: u64, end_time: u64
     );
@@ -50,7 +50,7 @@ pub trait IRevenueBuybacks<TContractState> {
     // Collects the proceeds for a particular order
     fn collect_proceeds_to_owner(ref self: TContractState, order_key: OrderKey);
 
-    // Sets the default config
+    // Sets the default config. Only callable by the owner.
     fn set_default_config(ref self: TContractState, config: Config);
 
     // Overrides the config for the given token. Only callable by the owner.
