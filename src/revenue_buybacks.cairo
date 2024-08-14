@@ -75,7 +75,6 @@ pub mod RevenueBuybacks {
     use core::num::traits::{Zero};
     use core::option::{OptionTrait};
     use core::traits::{TryInto, Into};
-    use ekubo::components::clear::{IClearDispatcher, IClearDispatcherTrait};
     use ekubo::components::owned::{
         IOwned, IOwnedDispatcher, IOwnedDispatcherTrait, Ownable, Owned as owned_component
     };
@@ -213,13 +212,9 @@ pub mod RevenueBuybacks {
 
         fn collect_proceeds_to_owner(ref self: ContractState, order_key: OrderKey) {
             let positions = self.positions.read();
-            let twamm = IClearDispatcher { contract_address: positions.get_twamm_address() };
-            positions.withdraw_proceeds_from_sale(self.token_id.read(), order_key);
-            twamm
-                .clear_minimum_to_recipient(
-                    IERC20Dispatcher { contract_address: order_key.buy_token },
-                    minimum: 0,
-                    recipient: self.get_owner()
+            positions
+                .withdraw_proceeds_from_sale_to(
+                    id: self.token_id.read(), order_key: order_key, recipient: self.get_owner()
                 );
         }
 
