@@ -20,7 +20,7 @@ casm = true
 
 [[tool.snforge.fork]]
 name = "mainnet"
-url = "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_7/fHMTeGf5b1PIw83HVoo7JUCpSr0THrxw"
+url = "https://free-rpc.nethermind.io/mainnet-juno"
 block_id.tag = "Latest"
 
 [dev-dependencies]
