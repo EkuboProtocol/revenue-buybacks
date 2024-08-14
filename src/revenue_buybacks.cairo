@@ -183,7 +183,12 @@ pub mod RevenueBuybacks {
 
             let positions = self.positions.read();
             let token_id = self.token_id.read();
-            self.core.read().withdraw_protocol_fees(positions.contract_address, sell_token, amount);
+            self
+                .core
+                .read()
+                .withdraw_protocol_fees(
+                    recipient: positions.contract_address, token: sell_token, amount: amount
+                );
             positions
                 .increase_sell_amount(
                     token_id,
