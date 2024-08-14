@@ -76,7 +76,8 @@ fn eth_token() -> ContractAddress {
 }
 
 
-// Deploys the revenue buybacks with the specified config or a default config and makes it the owner of ekubo core
+// Deploys the revenue buybacks with the specified config or a default config and makes it the owner
+// of ekubo core
 fn setup(config: Option<Config>) -> IRevenueBuybacksDispatcher {
     let rb = deploy_revenue_buybacks(
         config

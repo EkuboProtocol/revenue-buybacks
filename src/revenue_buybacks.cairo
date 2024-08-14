@@ -7,9 +7,11 @@ use starknet::{ContractAddress, ClassHash, storage_access::{StorePacking}};
 pub struct Config {
     // The token that will be purchased in the buybacks
     pub buy_token: ContractAddress,
-    // The minimum amount of time that can be between the start time and the current time. A value of 0 means the orders _can_ start immediately
+    // The minimum amount of time that can be between the start time and the current time. A value
+    // of 0 means the orders _can_ start immediately
     pub min_delay: u64,
-    // The maximum amount of time that can be between the start time and the current time. A value of 0 means that the orders _must_ start immediately
+    // The maximum amount of time that can be between the start time and the current time. A value
+    // of 0 means that the orders _must_ start immediately
     pub max_delay: u64,
     // The minimum duration of the buyback
     pub min_duration: u64,
@@ -27,13 +29,15 @@ pub trait IRevenueBuybacks<TContractState> {
     // Returns the positions contract that is used by this contract to implement the buybacks
     fn get_positions(self: @TContractState) -> ContractAddress;
 
-    // Returns the NFT token ID for the positions contract with which all the sell orders are associated
+    // Returns the NFT token ID for the positions contract with which all the sell orders are
+    // associated
     fn get_token_id(self: @TContractState) -> u64;
 
     // Returns the configuration for the given sell token
     fn get_config(self: @TContractState, sell_token: ContractAddress) -> Config;
 
-    // Withdraws the specified amount of revenue from the core contract and begins a sale of the token for the specified start and end time.
+    // Withdraws the specified amount of revenue from the core contract and begins a sale of the
+    // token for the specified start and end time.
     fn start_buybacks(
         ref self: TContractState,
         sell_token: ContractAddress,
@@ -95,8 +99,9 @@ pub mod RevenueBuybacks {
         core: ICoreDispatcher,
         positions: IPositionsDispatcher,
         config: Config,
-        config_overrides: LegacyMap<ContractAddress, Option<Config>>,
-        // the NFT token ID that all orders are associated with. we use just one so ownership can be simply transferred
+        config_overrides: Map<ContractAddress, Option<Config>>,
+        // the NFT token ID that all orders are associated with. we use just one so ownership can be
+        // simply transferred
         token_id: u64,
         #[substorage(v0)]
         owned: owned_component::Storage,
