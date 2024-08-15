@@ -26,11 +26,11 @@ use starknet::{
     storage_access::{StorePacking}, syscalls::{deploy_syscall}, ContractAddress
 };
 
-fn deploy_revenue_buybacks(config: Config) -> IRevenueBuybacksDispatcher {
+fn deploy_revenue_buybacks(default_config: Option<Config>) -> IRevenueBuybacksDispatcher {
     let contract = declare("RevenueBuybacks").unwrap().contract_class();
 
     let mut args: Array<felt252> = array![];
-    Serde::serialize(@(governor_address(), ekubo_core(), positions(), config), ref args,);
+    Serde::serialize(@(governor_address(), ekubo_core(), positions(), default_config), ref args);
     let (contract_address, _) = contract.deploy(@args).expect('Deploy failed');
 
     IRevenueBuybacksDispatcher { contract_address }
@@ -77,25 +77,24 @@ fn eth_token() -> ContractAddress {
 }
 
 
+fn example_config() -> Config {
+    Config {
+        buy_token: ekubo_token().contract_address,
+        min_delay: 0,
+        max_delay: 43200,
+        // 30 seconds
+        min_duration: 30,
+        // 7 days
+        max_duration: 604800,
+        // 30 bips
+        fee: 1020847100762815411640772995208708096
+    }
+}
+
 // Deploys the revenue buybacks with the specified config or a default config and makes it the owner
 // of ekubo core
-fn setup(config: Option<Config>) -> IRevenueBuybacksDispatcher {
-    let rb = deploy_revenue_buybacks(
-        config
-            .unwrap_or(
-                Config {
-                    buy_token: ekubo_token().contract_address,
-                    min_delay: 0,
-                    max_delay: 43200,
-                    // 30 seconds
-                    min_duration: 30,
-                    // 7 days
-                    max_duration: 604800,
-                    // 30 bips
-                    fee: 1020847100762815411640772995208708096
-                }
-            )
-    );
+fn setup(default_config: Option<Config>) -> IRevenueBuybacksDispatcher {
+    let rb = deploy_revenue_buybacks(default_config);
     let core = ekubo_core();
     cheat_caller_address(core.contract_address, governor_address(), CheatSpan::Indefinite);
     IOwnedDispatcher { contract_address: core.contract_address }
@@ -114,7 +113,7 @@ fn advance_time(by: u64) -> u64 {
 #[test]
 #[fork("mainnet")]
 fn test_setup_sets_owner() {
-    let rb = setup(config: Option::None);
+    let rb = setup(default_config: Option::Some(example_config()));
     assert_eq!(
         IOwnedDispatcher { contract_address: rb.contract_address }.get_owner(), governor_address()
     );
@@ -127,7 +126,7 @@ fn test_setup_sets_owner() {
 #[test]
 #[fork("mainnet")]
 fn test_eth_buybacks() {
-    let rb = setup(config: Option::None);
+    let rb = setup(default_config: Option::Some(example_config()));
     let start_time = (get_block_timestamp() / 16) * 16;
     let end_time = start_time + (16 * 8);
 
@@ -167,7 +166,7 @@ fn test_eth_buybacks() {
 #[test]
 #[fork("mainnet")]
 fn test_reclaim_core() {
-    let rb = setup(config: Option::None);
+    let rb = setup(default_config: Option::Some(example_config()));
 
     cheat_caller_address(rb.contract_address, governor_address(), CheatSpan::Indefinite);
     rb.reclaim_core();

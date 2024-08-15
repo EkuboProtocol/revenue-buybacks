@@ -55,10 +55,12 @@ pub trait IRevenueBuybacks<TContractState> {
     fn collect_proceeds_to_owner(ref self: TContractState, order_key: OrderKey);
 
     // Sets the default config. Only callable by the owner.
-    fn set_default_config(ref self: TContractState, config: Config);
+    fn set_default_config(ref self: TContractState, default_config: Option<Config>);
 
     // Overrides the config for the given token. Only callable by the owner.
-    fn set_config_for_token(ref self: TContractState, sell_token: ContractAddress, config: Config);
+    fn set_config_override(
+        ref self: TContractState, sell_token: ContractAddress, config_override: Option<Config>
+    );
 
     // Takes ownership of core back from this contract. Only callable by the owner.
     fn reclaim_core(ref self: TContractState);
@@ -102,7 +104,7 @@ pub mod RevenueBuybacks {
     struct Storage {
         core: ICoreDispatcher,
         positions: IPositionsDispatcher,
-        config: Config,
+        default_config: Option<Config>,
         config_overrides: Map<ContractAddress, Option<Config>>,
         // the NFT token ID that all orders are associated with. we use just one so ownership can be
         // simply transferred
@@ -117,12 +119,12 @@ pub mod RevenueBuybacks {
         owner: ContractAddress,
         core: ICoreDispatcher,
         positions: IPositionsDispatcher,
-        config: Config,
+        default_config: Option<Config>,
     ) {
         self.initialize_owned(owner);
         self.core.write(core);
         self.positions.write(positions);
-        self.config.write(config);
+        self.default_config.write(default_config);
         self.token_id.write(positions.mint_v2(Zero::zero()));
     }
 
@@ -147,7 +149,10 @@ pub mod RevenueBuybacks {
         }
 
         fn get_config(self: @ContractState, sell_token: ContractAddress) -> Config {
-            self.config_overrides.read(sell_token).unwrap_or(self.config.read())
+            self
+                .config_overrides
+                .read(sell_token)
+                .unwrap_or(self.default_config.read().expect('No default config'))
         }
 
         fn start_buybacks(
@@ -223,16 +228,16 @@ pub mod RevenueBuybacks {
                 );
         }
 
-        fn set_default_config(ref self: ContractState, config: Config) {
+        fn set_default_config(ref self: ContractState, default_config: Option<Config>) {
             self.require_owner();
-            self.config.write(config);
+            self.default_config.write(default_config);
         }
 
-        fn set_config_for_token(
-            ref self: ContractState, sell_token: ContractAddress, config: Config
+        fn set_config_override(
+            ref self: ContractState, sell_token: ContractAddress, config_override: Option<Config>
         ) {
             self.require_owner();
-            self.config_overrides.write(sell_token, Option::Some(config));
+            self.config_overrides.write(sell_token, config_override);
         }
 
         fn reclaim_core(ref self: ContractState) {
