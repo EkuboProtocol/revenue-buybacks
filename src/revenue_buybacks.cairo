@@ -68,10 +68,6 @@ pub trait IRevenueBuybacks<TContractState> {
 
 #[starknet::contract]
 pub mod RevenueBuybacks {
-    use starknet::storage::StorageMapWriteAccess;
-    use starknet::storage::StorageMapReadAccess;
-    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-
     use core::array::{ArrayTrait};
     use core::cmp::{max};
     use core::num::traits::{Zero};
@@ -91,8 +87,11 @@ pub mod RevenueBuybacks {
 
     use ekubo::types::keys::{PoolKey, PositionKey};
     use ekubo::types::keys::{SavedBalanceKey};
-    use starknet::{get_block_timestamp, get_contract_address, get_caller_address, ClassHash};
+    use starknet::storage::StorageMapReadAccess;
+    use starknet::storage::StorageMapWriteAccess;
     use starknet::storage::{Map};
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use starknet::{get_block_timestamp, get_contract_address, get_caller_address, ClassHash};
     use super::{IRevenueBuybacks, i129, i129Trait, ContractAddress, Config, OrderKey};
 
     component!(path: owned_component, storage: owned, event: OwnedEvent);
@@ -149,10 +148,11 @@ pub mod RevenueBuybacks {
         }
 
         fn get_config(self: @ContractState, sell_token: ContractAddress) -> Config {
-            self
-                .config_overrides
-                .read(sell_token)
-                .unwrap_or(self.default_config.read().expect('No default config'))
+            if let Option::Some(config) = self.config_overrides.read(sell_token) {
+                config
+            } else {
+                self.default_config.read().expect('No config for token')
+            }
         }
 
         fn start_buybacks(
