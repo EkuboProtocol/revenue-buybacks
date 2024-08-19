@@ -7,9 +7,11 @@ use starknet::{ContractAddress, ClassHash, storage_access::{StorePacking}};
 pub struct Config {
     // The token that will be purchased in the buybacks
     pub buy_token: ContractAddress,
-    // The minimum amount of time that can be between the start time and the current time. A value of 0 means the orders _can_ start immediately
+    // The minimum amount of time that can be between the start time and the current time. A value
+    // of 0 means the orders _can_ start immediately
     pub min_delay: u64,
-    // The maximum amount of time that can be between the start time and the current time. A value of 0 means that the orders _must_ start immediately
+    // The maximum amount of time that can be between the start time and the current time. A value
+    // of 0 means that the orders _must_ start immediately
     pub max_delay: u64,
     // The minimum duration of the buyback
     pub min_duration: u64,
@@ -27,13 +29,15 @@ pub trait IRevenueBuybacks<TContractState> {
     // Returns the positions contract that is used by this contract to implement the buybacks
     fn get_positions(self: @TContractState) -> ContractAddress;
 
-    // Returns the NFT token ID for the positions contract with which all the sell orders are associated
+    // Returns the NFT token ID for the positions contract with which all the sell orders are
+    // associated
     fn get_token_id(self: @TContractState) -> u64;
 
     // Returns the configuration for the given sell token
     fn get_config(self: @TContractState, sell_token: ContractAddress) -> Config;
 
-    // Withdraws the specified amount of revenue from the core contract and begins a sale of the token for the specified start and end time.
+    // Withdraws the specified amount of revenue from the core contract and begins a sale of the
+    // token for the specified start and end time.
     fn start_buybacks(
         ref self: TContractState,
         sell_token: ContractAddress,
@@ -51,10 +55,12 @@ pub trait IRevenueBuybacks<TContractState> {
     fn collect_proceeds_to_owner(ref self: TContractState, order_key: OrderKey);
 
     // Sets the default config. Only callable by the owner.
-    fn set_default_config(ref self: TContractState, config: Config);
+    fn set_default_config(ref self: TContractState, default_config: Option<Config>);
 
     // Overrides the config for the given token. Only callable by the owner.
-    fn set_config_for_token(ref self: TContractState, sell_token: ContractAddress, config: Config);
+    fn set_config_override(
+        ref self: TContractState, sell_token: ContractAddress, config_override: Option<Config>
+    );
 
     // Takes ownership of core back from this contract. Only callable by the owner.
     fn reclaim_core(ref self: TContractState);
@@ -67,7 +73,6 @@ pub mod RevenueBuybacks {
     use core::num::traits::{Zero};
     use core::option::{OptionTrait};
     use core::traits::{TryInto, Into};
-    use ekubo::components::clear::{IClearDispatcher, IClearDispatcherTrait};
     use ekubo::components::owned::{
         IOwned, IOwnedDispatcher, IOwnedDispatcherTrait, Ownable, Owned as owned_component
     };
@@ -82,6 +87,10 @@ pub mod RevenueBuybacks {
 
     use ekubo::types::keys::{PoolKey, PositionKey};
     use ekubo::types::keys::{SavedBalanceKey};
+    use starknet::storage::StorageMapReadAccess;
+    use starknet::storage::StorageMapWriteAccess;
+    use starknet::storage::{Map};
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use starknet::{get_block_timestamp, get_contract_address, get_caller_address, ClassHash};
     use super::{IRevenueBuybacks, i129, i129Trait, ContractAddress, Config, OrderKey};
 
@@ -94,9 +103,10 @@ pub mod RevenueBuybacks {
     struct Storage {
         core: ICoreDispatcher,
         positions: IPositionsDispatcher,
-        config: Config,
-        config_overrides: LegacyMap<ContractAddress, Option<Config>>,
-        // the NFT token ID that all orders are associated with. we use just one so ownership can be simply transferred
+        default_config: Option<Config>,
+        config_overrides: Map<ContractAddress, Option<Config>>,
+        // the NFT token ID that all orders are associated with. we use just one so ownership can be
+        // simply transferred
         token_id: u64,
         #[substorage(v0)]
         owned: owned_component::Storage,
@@ -108,12 +118,12 @@ pub mod RevenueBuybacks {
         owner: ContractAddress,
         core: ICoreDispatcher,
         positions: IPositionsDispatcher,
-        config: Config,
+        default_config: Option<Config>,
     ) {
         self.initialize_owned(owner);
         self.core.write(core);
         self.positions.write(positions);
-        self.config.write(config);
+        self.default_config.write(default_config);
         self.token_id.write(positions.mint_v2(Zero::zero()));
     }
 
@@ -138,7 +148,11 @@ pub mod RevenueBuybacks {
         }
 
         fn get_config(self: @ContractState, sell_token: ContractAddress) -> Config {
-            self.config_overrides.read(sell_token).unwrap_or(self.config.read())
+            if let Option::Some(config) = self.config_overrides.read(sell_token) {
+                config
+            } else {
+                self.default_config.read().expect('No config for token')
+            }
         }
 
         fn start_buybacks(
@@ -174,7 +188,12 @@ pub mod RevenueBuybacks {
 
             let positions = self.positions.read();
             let token_id = self.token_id.read();
-            self.core.read().withdraw_protocol_fees(positions.contract_address, sell_token, amount);
+            self
+                .core
+                .read()
+                .withdraw_protocol_fees(
+                    recipient: positions.contract_address, token: sell_token, amount: amount
+                );
             positions
                 .increase_sell_amount(
                     token_id,
@@ -203,26 +222,22 @@ pub mod RevenueBuybacks {
 
         fn collect_proceeds_to_owner(ref self: ContractState, order_key: OrderKey) {
             let positions = self.positions.read();
-            let twamm = IClearDispatcher { contract_address: positions.get_twamm_address() };
-            positions.withdraw_proceeds_from_sale(self.token_id.read(), order_key);
-            twamm
-                .clear_minimum_to_recipient(
-                    IERC20Dispatcher { contract_address: order_key.buy_token },
-                    minimum: 0,
-                    recipient: self.get_owner()
+            positions
+                .withdraw_proceeds_from_sale_to(
+                    id: self.token_id.read(), order_key: order_key, recipient: self.get_owner()
                 );
         }
 
-        fn set_default_config(ref self: ContractState, config: Config) {
+        fn set_default_config(ref self: ContractState, default_config: Option<Config>) {
             self.require_owner();
-            self.config.write(config);
+            self.default_config.write(default_config);
         }
 
-        fn set_config_for_token(
-            ref self: ContractState, sell_token: ContractAddress, config: Config
+        fn set_config_override(
+            ref self: ContractState, sell_token: ContractAddress, config_override: Option<Config>
         ) {
             self.require_owner();
-            self.config_overrides.write(sell_token, Option::Some(config));
+            self.config_overrides.write(sell_token, config_override);
         }
 
         fn reclaim_core(ref self: ContractState) {
