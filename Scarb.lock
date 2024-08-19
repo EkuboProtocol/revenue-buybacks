@@ -17,12 +17,12 @@ dependencies = [
 [[package]]
 name = "snforge_scarb_plugin"
 version = "0.1.0"
-source = "git+https://github.com/foundry-rs/starknet-foundry#f3d802d425e9a2555e060634cc916ff824752597"
+source = "git+https://github.com/foundry-rs/starknet-foundry#6b41faf806a204594de8ffc80f9d94931238c2b9"
 
 [[package]]
 name = "snforge_std"
 version = "0.27.0"
-source = "git+https://github.com/foundry-rs/starknet-foundry#f3d802d425e9a2555e060634cc916ff824752597"
+source = "git+https://github.com/foundry-rs/starknet-foundry#6b41faf806a204594de8ffc80f9d94931238c2b9"
 dependencies = [
  "snforge_scarb_plugin",
 ]
