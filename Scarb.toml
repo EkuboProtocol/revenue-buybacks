@@ -19,8 +19,13 @@ allowed-libfuncs-list.name = "audited"
 casm = true
 
 [[tool.snforge.fork]]
+name = "mainnet"
+url = "https://free-rpc.nethermind.io/mainnet-juno"
+block_id.tag = "Latest"
+
+[[tool.snforge.fork]]
 name = "sepolia"
-url = "https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_7/NiEYg24-vYIPZyy9tapT_cTsT8iGTkx-"
+url = "https://free-rpc.nethermind.io/mainnet-juno"
 block_id.tag = "Latest"
 
 [dev-dependencies]
