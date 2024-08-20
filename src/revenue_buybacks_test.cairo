@@ -112,7 +112,7 @@ fn advance_time(by: u64) -> u64 {
 
 #[test]
 #[fork("sepolia")]
-fn test_setup_sets_owner() {
+fn test_setup() {
     let rb = setup(default_config: Option::Some(example_config()));
     assert_eq!(
         IOwnedDispatcher { contract_address: rb.contract_address }.get_owner(), governor_address()
@@ -121,6 +121,19 @@ fn test_setup_sets_owner() {
         IOwnedDispatcher { contract_address: ekubo_core().contract_address }.get_owner(),
         rb.contract_address
     );
+    assert_eq!(rb.get_core(), ekubo_core().contract_address);
+    assert_eq!(rb.get_positions(), positions().contract_address);
+    // the owner of the minted positions token is the revenue buybacks contract
+    assert_eq!(
+        IERC721Dispatcher {
+            contract_address: IPositionsDispatcher { contract_address: rb.get_positions() }
+                .get_nft_address()
+        }
+            .owner_of(rb.get_token_id().into()),
+        rb.contract_address
+    );
+    // default config, so any address will do
+    assert_eq!(rb.get_config(sell_token: contract_address_const::<0xdeadbeef>()), example_config());
 }
 
 #[test]
@@ -160,6 +173,52 @@ fn test_eth_buybacks() {
     rb.collect_proceeds_to_owner(order_key);
     let balance_after = ekubo_token().balanceOf(governor_address());
     assert_eq!(balance_after - balance_before, order_info_after.purchased_amount.into());
+}
+
+#[test]
+#[fork("sepolia")]
+#[should_panic(expected: ('Invalid sell token',))]
+fn test_same_token_buyback_fails() {
+    let rb = setup(default_config: Option::Some(example_config()));
+    let start_time = (get_block_timestamp() / 16) * 16;
+    let end_time = start_time + (16 * 8);
+
+    rb
+        .start_buybacks_all(
+            sell_token: ekubo_token().contract_address, start_time: start_time, end_time: end_time
+        );
+}
+
+
+#[test]
+#[fork("sepolia")]
+#[should_panic(expected: ('No config for token',))]
+fn test_buyback_with_no_config() {
+    let rb = setup(default_config: Option::None);
+    let start_time = (get_block_timestamp() / 16) * 16;
+    let end_time = start_time + (16 * 8);
+
+    rb.get_config(sell_token: eth_token());
+}
+
+
+#[test]
+#[fork("sepolia")]
+fn test_buyback_with_config_override() {
+    let rb = setup(default_config: Option::None);
+    cheat_caller_address(rb.contract_address, governor_address(), CheatSpan::Indefinite);
+    rb
+        .set_config_override(
+            sell_token: eth_token(), config_override: Option::Some(example_config())
+        );
+    stop_cheat_caller_address(rb.contract_address);
+
+    assert_eq!(rb.get_config(sell_token: eth_token()), example_config());
+
+    let start_time = (get_block_timestamp() / 16) * 16;
+    let end_time = start_time + (16 * 8);
+
+    rb.start_buybacks_all(sell_token: eth_token(), start_time: start_time, end_time: end_time);
 }
 
 

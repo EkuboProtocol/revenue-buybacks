@@ -3,7 +3,7 @@ use ekubo::extensions::interfaces::twamm::{OrderKey};
 use ekubo::types::i129::{i129, i129Trait};
 use starknet::{ContractAddress, ClassHash, storage_access::{StorePacking}};
 
-#[derive(Copy, Drop, Serde, starknet::Store)]
+#[derive(Copy, Drop, Serde, starknet::Store, PartialEq, Debug)]
 pub struct Config {
     // The token that will be purchased in the buybacks
     pub buy_token: ContractAddress,
