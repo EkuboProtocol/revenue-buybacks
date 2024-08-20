@@ -23,5 +23,10 @@ name = "mainnet"
 url = "https://free-rpc.nethermind.io/mainnet-juno"
 block_id.tag = "Latest"
 
+[[tool.snforge.fork]]
+name = "sepolia"
+url = "https://free-rpc.nethermind.io/sepolia-juno"
+block_id.tag = "Latest"
+
 [dev-dependencies]
 cairo_test = "2.7.1"
