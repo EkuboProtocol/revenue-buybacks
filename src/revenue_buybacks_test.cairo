@@ -195,9 +195,6 @@ fn test_same_token_buyback_fails() {
 #[should_panic(expected: ('No config for token',))]
 fn test_buyback_with_no_config() {
     let rb = setup(default_config: Option::None);
-    let start_time = (get_block_timestamp() / 16) * 16;
-    let end_time = start_time + (16 * 8);
-
     rb.get_config(sell_token: eth_token());
 }
 
