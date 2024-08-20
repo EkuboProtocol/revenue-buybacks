@@ -8,7 +8,7 @@ edition = '2024_07'
 
 [dependencies]
 ekubo = { git = "https://github.com/ekuboprotocol/abis" }
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.27.0" }
 starknet = "=2.7.1"
 
 [tool.fmt]
@@ -19,8 +19,8 @@ allowed-libfuncs-list.name = "audited"
 casm = true
 
 [[tool.snforge.fork]]
-name = "sepolia"
-url = "https://free-rpc.nethermind.io/sepolia-juno"
+name = "mainnet"
+url = "https://free-rpc.nethermind.io/mainnet-juno"
 block_id.tag = "Latest"
 
 [dev-dependencies]
