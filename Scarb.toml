@@ -25,7 +25,7 @@ block_id.tag = "Latest"
 
 [[tool.snforge.fork]]
 name = "sepolia"
-url = "https://free-rpc.nethermind.io/mainnet-juno"
+url = "https://free-rpc.nethermind.io/sepolia-juno"
 block_id.tag = "Latest"
 
 [dev-dependencies]
