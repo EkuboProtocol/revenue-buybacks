@@ -29,4 +29,4 @@ url = "https://free-rpc.nethermind.io/sepolia-juno"
 block_id.tag = "Latest"
 
 [dev-dependencies]
-cairo_test = "2.7.1"
+cairo_test = "2.8.0"
