@@ -10,13 +10,13 @@ use ekubo_rb::revenue_buybacks::{
     IRevenueBuybacksDispatcher, IRevenueBuybacksDispatcherTrait, Config
 };
 use snforge_std::{
-    declare, ContractClassTrait, cheat_caller_address, stop_cheat_caller_address,
-    start_cheat_block_timestamp_global, CheatSpan,
+    declare, DeclareResultTrait, ContractClassTrait, cheat_caller_address,
+    stop_cheat_caller_address, start_cheat_block_timestamp_global, CheatSpan,
 };
 use starknet::{get_block_timestamp, contract_address_const, ContractAddress};
 
 fn deploy_revenue_buybacks(default_config: Option<Config>) -> IRevenueBuybacksDispatcher {
-    let contract = declare("RevenueBuybacks").unwrap();
+    let contract = declare("RevenueBuybacks").unwrap().contract_class();
 
     let mut args: Array<felt252> = array![];
     Serde::serialize(@(governor_address(), ekubo_core(), positions(), default_config), ref args);

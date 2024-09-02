@@ -8,7 +8,6 @@ edition = '2024_07'
 
 [dependencies]
 ekubo = { git = "https://github.com/ekuboprotocol/abis" }
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.27.0" }
 starknet = ">=2.7.0"
 
 [tool.fmt]
@@ -26,7 +25,8 @@ block_id.tag = "Latest"
 [[tool.snforge.fork]]
 name = "sepolia"
 url = "https://free-rpc.nethermind.io/sepolia-juno"
-block_id.tag = "Latest"
+block_id.number = "154085"
 
 [dev-dependencies]
-cairo_test = "2.8.0"
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.29.0" }
+assert_macros = "2.8.0"

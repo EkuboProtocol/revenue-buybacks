@@ -4,7 +4,7 @@ version = 1
 [[package]]
 name = "ekubo"
 version = "0.1.0"
-source = "git+https://github.com/ekuboprotocol/abis#79fc307316ca6b27a34bacc263af639abc80fb47"
+source = "git+https://github.com/ekuboprotocol/abis#0bd97534dfa42271a7667a37b8a19464a7ded716"
 
 [[package]]
 name = "ekubo_rb"
@@ -15,6 +15,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "snforge_scarb_plugin"
+version = "0.1.0"
+source = "git+https://github.com/foundry-rs/starknet-foundry.git?tag=v0.29.0#d37d2272ca6c915117646de76cdf26ec06e44f61"
+
+[[package]]
 name = "snforge_std"
-version = "0.27.0"
-source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.27.0#2d99b7c00678ef0363881ee0273550c44a9263de"
+version = "0.29.0"
+source = "git+https://github.com/foundry-rs/starknet-foundry.git?tag=v0.29.0#d37d2272ca6c915117646de76cdf26ec06e44f61"
+dependencies = [
+ "snforge_scarb_plugin",
+]
