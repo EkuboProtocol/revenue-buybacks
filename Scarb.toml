@@ -20,12 +20,7 @@ casm = true
 [[tool.snforge.fork]]
 name = "mainnet"
 url = "https://free-rpc.nethermind.io/mainnet-juno"
-block_id.tag = "Latest"
-
-[[tool.snforge.fork]]
-name = "sepolia"
-url = "https://free-rpc.nethermind.io/sepolia-juno"
-block_id.number = "154085"
+block_id.number = "691381"
 
 [dev-dependencies]
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.29.0" }

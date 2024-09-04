@@ -28,7 +28,7 @@ fn deploy_revenue_buybacks(default_config: Option<Config>) -> IRevenueBuybacksDi
 fn ekubo_core() -> ICoreDispatcher {
     ICoreDispatcher {
         contract_address: contract_address_const::<
-            0x0444a09d96389aa7148f1aada508e30b71299ffe650d9c97fdaae38cb9a23384
+            0x00000005dd3D2F4429AF886cD1a3b08289DBcEa99A294197E9eB43b0e0325b4b
         >()
     }
 }
@@ -36,7 +36,7 @@ fn ekubo_core() -> ICoreDispatcher {
 fn ekubo_token() -> IERC20Dispatcher {
     IERC20Dispatcher {
         contract_address: contract_address_const::<
-            0x01fad7c03b2ea7fbef306764e20977f8d4eae6191b3a54e4514cc5fc9d19e569
+            0x075afe6402ad5a5c20dd25e10ec3b3986acaa647b77e4ae24b0cbc9a54a27a87
         >()
     }
 }
@@ -44,7 +44,7 @@ fn ekubo_token() -> IERC20Dispatcher {
 fn positions() -> IPositionsDispatcher {
     IPositionsDispatcher {
         contract_address: contract_address_const::<
-            0x06a2aee84bb0ed5dded4384ddd0e40e9c1372b818668375ab8e3ec08807417e5
+            0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067
         >()
     }
 }
@@ -52,13 +52,13 @@ fn positions() -> IPositionsDispatcher {
 fn router() -> IRouterDispatcher {
     IRouterDispatcher {
         contract_address: contract_address_const::<
-            0x0045f933adf0607292468ad1c1dedaa74d5ad166392590e72676a34d01d7b763
+            0x0199741822c2dc722f6f605204f35e56dbc23bceed54818168c4c49e4fb8737e
         >()
     }
 }
 
 fn governor_address() -> ContractAddress {
-    contract_address_const::<0x048bb83134ce6a312d1b41b0b3deccc4ce9a9d280e6c68c0eb1c517259c89d74>()
+    contract_address_const::<0x053499f7aa2706395060fe72d00388803fb2dcc111429891ad7b2d9dcea29acd>()
 }
 
 fn eth_token() -> ContractAddress {
@@ -100,7 +100,7 @@ fn advance_time(by: u64) -> u64 {
 }
 
 #[test]
-#[fork("sepolia")]
+#[fork("mainnet")]
 fn test_setup() {
     let rb = setup(default_config: Option::Some(example_config()));
     assert_eq!(
@@ -126,7 +126,7 @@ fn test_setup() {
 }
 
 #[test]
-#[fork("sepolia")]
+#[fork("mainnet")]
 fn test_eth_buybacks() {
     let rb = setup(default_config: Option::Some(example_config()));
     let start_time = (get_block_timestamp() / 16) * 16;
@@ -165,7 +165,7 @@ fn test_eth_buybacks() {
 }
 
 #[test]
-#[fork("sepolia")]
+#[fork("mainnet")]
 #[should_panic(expected: ('Invalid sell token',))]
 fn test_same_token_buyback_fails() {
     let rb = setup(default_config: Option::Some(example_config()));
@@ -180,7 +180,7 @@ fn test_same_token_buyback_fails() {
 
 
 #[test]
-#[fork("sepolia")]
+#[fork("mainnet")]
 #[should_panic(expected: ('No config for token',))]
 fn test_buyback_with_no_config() {
     let rb = setup(default_config: Option::None);
@@ -189,7 +189,7 @@ fn test_buyback_with_no_config() {
 
 
 #[test]
-#[fork("sepolia")]
+#[fork("mainnet")]
 fn test_buyback_with_config_override() {
     let rb = setup(default_config: Option::None);
     cheat_caller_address(rb.contract_address, governor_address(), CheatSpan::Indefinite);
@@ -209,7 +209,7 @@ fn test_buyback_with_config_override() {
 
 
 #[test]
-#[fork("sepolia")]
+#[fork("mainnet")]
 fn test_reclaim_core() {
     let rb = setup(default_config: Option::Some(example_config()));
 
